@@ -1,5 +1,0 @@
-0.56,temperature,1
-0.57,user,2
-0.58,motion,3
-0.6,bulb,4
-0.61,outlet,5
