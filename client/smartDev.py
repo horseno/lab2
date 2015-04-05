@@ -5,6 +5,7 @@ import time
 import sys
 sys.path.append("./")
 import setting
+import multicast
 
 class SmartDev:
     ''' Represents any smart device'''

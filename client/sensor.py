@@ -1,5 +1,7 @@
 #import zerorpc
-import mulitcast
+import sys
+sys.path.append("./")
+import multicast
 import xmlrpclib 
 import SimpleXMLRPCServer
 
