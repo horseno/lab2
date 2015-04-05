@@ -23,7 +23,7 @@ class SmartDev:
     def register_to_server(self):
         '''register with the gateway, sending name, type and listening address'''
         self.cid = self.c.register(self.ctype,self.name,self.localadd)   
-    
+        return 1
     
     def start_listen(self):
         '''To enable communication with the gateway, start a server to catch queries and instructions'''
@@ -41,6 +41,7 @@ class SmartDev:
     def set_state(self,state):
         '''function used to debug and test'''
         self.state = state
+        return 1
 
     def change_state(self, state):
         '''change state according to the request of the gateway, write change to file'''

@@ -22,9 +22,10 @@ def multicast(selfadd,vector):
             print "http://"+add[0]+":"+str(add[1])
             #c = zerorpc.Client()
             #c.connect(add)
+
             c.update_vector_clock(vector)
             #c.close()
 
     
 
-#multicast("tcp://0.0.0.0:12002",[5,1,2,3,4,5])
+#multicast(('127.0.0.1', 10003),[5,1,2,3,4,5])

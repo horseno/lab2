@@ -11,12 +11,12 @@ import setting
 #class for user process
 class UserProcess(object):
 	#initial
-    def __init__(self,localadd):
+    def __init__(self,localadd,devNum):
         self._mode = "HOME"
         self._gid = -1 #global id 
         self._localadd = localadd
         self.log=open("user_output.txt",'w+')#output file
-    
+        self.vector = [0]* devNum
     #thread for listening 
     def start_listen(self):
         self.s = SimpleXMLRPCServer.SimpleXMLRPCServer(self._localadd)#zerorpc.Server(self)
@@ -47,6 +47,15 @@ class UserProcess(object):
         #self._mode = mode
         #c.close()
 
+    def update_vector_clock(self,vector):
+        for i in range(len(vector)):
+            if vector[i] > self.vector[i]:
+                self.vector[i] = vector[i]
+
+        self.vector[self._gid] = self.vector[self._gid]+1
+
+        return 1
+
 #thread for listening   			
 class user(threading.Thread):
     def __init__(self,user):
@@ -69,7 +78,8 @@ def readTest(filename,col):
             return time, action    
         
 timel,action = readTest('test-input.csv',4)
-myuser = UserProcess(setting.localadd["user"])
+devNum = setting.devNum
+myuser = UserProcess(setting.localadd["user"],devNum)
 listen_thread = user(myuser)
 listen_thread.start()
 #calculate start time

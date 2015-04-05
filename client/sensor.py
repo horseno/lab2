@@ -22,6 +22,7 @@ class Sensor:
     def register_to_server(self):
         '''register with the gateway, sending name, type and listening address'''
         self.cid = self.c.register(self.ctype,self.name,self.localadd)
+        return 1
 
     def start_listen(self):
         '''To enable communication with the gateway, start a server to catch queries and instructions'''
@@ -40,12 +41,14 @@ class Sensor:
 
         '''set state from test case'''
         self.state = state
+        return 1
 
     def set_state_push(self,state):
         '''set the state of sensor from test case, push to the gateway if state changed'''
         if self.state != state:
             self.state = state
             self.report_to_server()
+        return 1
 
     def report_to_server(self):
         '''Push to the server'''
@@ -53,7 +56,9 @@ class Sensor:
         multicast.multicast(self.localadd, self.vector)
         self.c.report_state(self.cid, self.state)
 
-    def  update_vector_clock(self,vector):
+        return 1
+
+    def update_vector_clock(self,vector):
         for i in range(len(vector)):
             if vector[i] > self.vector[i]:
                 self.vector[i] = vector[i]
