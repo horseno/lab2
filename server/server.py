@@ -8,7 +8,7 @@ import SimpleXMLRPCServer
 import sys
 sys.path.append("./")
 import setting
-
+import multicast
 
 
 #class for Gateway
@@ -151,6 +151,7 @@ class Gateway(object):
                 self.vector[i] = vector[i]
 
         self.vector[self.cid] = self.vector[self.cid]+1
+        return 1
 		
 #thread for listening
 class myserver(threading.Thread):
