@@ -10,7 +10,7 @@ import setting
 #get ip information from setting file 
 serveradd = setting.serveradd
 localadd = setting.localadd[os.path.basename(__file__).split('.',1)[0]]
-
+devNum = setting.devNum
 class temperature (threading.Thread):
     def __init__(self,client):
         threading.Thread.__init__(self)
@@ -58,7 +58,7 @@ def main():
         waitT = setting.start_time - current_time
         time.sleep(waitT)
 
-    temp = sensor.Sensor("motion",serveradd,localadd)
+    temp = sensor.Sensor("motion",serveradd,localadd,devNum)
     # create a thread to listen, deal with server pulls
     listen_thread = temperature(temp)
     listen_thread.start()

@@ -25,5 +25,9 @@ start_time = 1428263714
 start_time = 1428263794
 start_time = 1428264027
 start_time = 1428264127
+<<<<<<< HEAD
 start_time = 1428264317
 start_time = 1428264611
+=======
+start_time = 1428264517
+>>>>>>> origin/master
