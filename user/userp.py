@@ -1,4 +1,6 @@
-import zerorpc
+#import zerorpc
+import xmlrpclib 
+import SimpleXMLRPCServer
 import time
 import threading
 import csv
@@ -17,26 +19,33 @@ class UserProcess(object):
     
     #thread for listening 
     def start_listen(self):
-    	s = zerorpc.Server(self)
-        s.bind(self._localadd)
-        s.run()
+        self.s = SimpleXMLRPCServer.SimpleXMLRPCServer(self._localadd)#zerorpc.Server(self)
+        self.s.register_instance(self)
+        self.s.serve_forever()
+    	#s = zerorpc.Server(self)
+        #s.bind(self._localadd)
+        #s.run()
     
     #rpc call for register
     def register(self):
-    	c = zerorpc.Client()
-        c.connect(setting.serveradd)
-    	self._gid = c.register("user","user",self._localadd)
-    	c.close()
+        self.c = xmlrpclib.ServerProxy("http://"+setting.serveradd[0]+":"+str(setting.serveradd[1]))
+        self._gid = self.c.register("user","user",self._localadd)
+    	#c = zerorpc.Client()
+        #c.connect(setting.serveradd)
+    	#self._gid = c.register("user","user",self._localadd)
+    	#c.close()
     #rpc interface for text message
     def text_message(self,msg):
         self.log.write(msg+'\n')
     #rpc call for change mode 
     def change_mode(self,mode):
-     	c = zerorpc.Client()
-        c.connect(setting.serveradd)
-    	c.change_mode(mode)
-        self._mode = mode
-        c.close()
+        self.c.change_mode(mode)
+        self._mode = self.c.change_mode(mode)
+     	#c = zerorpc.Client()
+        #c.connect(setting.serveradd)
+    	#c.change_mode(mode)
+        #self._mode = mode
+        #c.close()
 
 #thread for listening   			
 class user(threading.Thread):
