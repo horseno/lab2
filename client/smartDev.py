@@ -9,7 +9,7 @@ import multicast
 
 class SmartDev:
     ''' Represents any smart device'''
-    def __init__(self,name,serveradd,localadd):
+    def __init__(self,name,serveradd,localadd,devNum):
         self.name = name
         self.ctype = 'device'
         self.localadd = localadd
