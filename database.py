@@ -1,20 +1,27 @@
-import zerorpc
+#import zerorpc
+import xmlrpclib 
+import SimpleXMLRPCServer
 import csv
+
 class Database:
     '''Backend Database'''
     def __init__(self,Dbadd):
         #store current state and history state in separate files
-        self.fname = "current.csv"
+        self.fname = "dbfile.csv"
     
-        self.s = zerorpc.Server(self)
-        self.s.bind(Dbadd)
-        self.s.run()
+        self.s = SimpleXMLRPCServer.SimpleXMLRPCServer(Dbadd)#zerorpc.Server(self)
+        self.s.register_instance(self)
+        self.s.serve_forever()
+
+        #self.s = zerorpc.Server(self)
+        #self.s.bind(Dbadd)
+        #self.s.run()
 
     def write(self, cid, state, timestamp):
         with open(self.fname, 'ab') as f:
             curWriter = csv.writer(f)
             curWriter.writerow([cid,state,timestamp])
-
+        return 1
 
 
     def read(self, cid, state, timestamp):
