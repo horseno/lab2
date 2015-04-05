@@ -1,4 +1,6 @@
-import zerorpc
+#import zerorpc
+import xmlrpclib 
+import SimpleXMLRPCServer
 import time
 import sys
 sys.path.append("./")
@@ -10,9 +12,9 @@ class SmartDev:
         self.name = name
         self.ctype = 'device'
         self.localadd = localadd
-
-        self.c = zerorpc.Client()
-        self.c.connect(serveradd)
+        self.c = xmlrpclib.ServerProxy("http://"+serveradd[0]+":"+str(serveradd[1]))
+        #self.c = zerorpc.Client()
+        #self.c.connect(serveradd)
 
         self.state = '1'
 
@@ -23,9 +25,12 @@ class SmartDev:
     
     def start_listen(self):
         '''To enable communication with the gateway, start a server to catch queries and instructions'''
-        self.s = zerorpc.Server(self)
-        self.s.bind(self.localadd)
-        self.s.run()
+        self.s = SimpleXMLRPCServer.SimpleXMLRPCServer(self.localadd)#zerorpc.Server(self)
+        self.s.register_instance(self)
+        self.s.serve_forever()
+        #self.s = zerorpc.Server(self)
+        #self.s.bind(self.localadd)
+        #self.s.run()
 
     def query_state(self):
         return self.state
