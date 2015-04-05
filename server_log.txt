@@ -1,7 +1,5 @@
-<<<<<<< HEAD
-0.59,bulb,1
-0.59,outlet,2
-0.59,user,3
-0.67,temperature,4
-=======
->>>>>>> origin/master
+0.95,motion,1
+0.97,bulb,2
+0.97,temperature,3
+0.97,outlet,4
+0.97,user,5
