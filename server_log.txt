@@ -1,5 +1,0 @@
-0.95,motion,1
-0.97,bulb,2
-0.97,temperature,3
-0.97,outlet,4
-0.97,user,5
