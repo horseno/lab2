@@ -19,6 +19,7 @@ def multicast(selfadd,vector):
     for add in addli:
         if add != selfadd:
             c = xmlrpclib.ServerProxy("http://"+add[0]+":"+str(add[1]))
+            print "http://"+add[0]+":"+str(add[1])
             #c = zerorpc.Client()
             #c.connect(add)
             c.update_vector_clock(vector)
