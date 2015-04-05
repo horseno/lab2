@@ -18,7 +18,8 @@ class SmartDev:
         #self.c.connect(serveradd)
 
         self.state = '1'
-
+        self.vector = [0] * devNum
+        
     def register_to_server(self):
         '''register with the gateway, sending name, type and listening address'''
         self.cid = self.c.register(self.ctype,self.name,self.localadd)   

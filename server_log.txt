@@ -1,0 +1,5 @@
+0.18,temperature,1
+0.18,motion,2
+0.18,outlet,3
+0.18,user,4
+0.18,bulb,5
