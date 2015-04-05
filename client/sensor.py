@@ -1,5 +1,8 @@
-import zerorpc
+#import zerorpc
 import mulitcast
+import xmlrpclib 
+import SimpleXMLRPCServer
+
 class Sensor:
     ''' Represents any senors'''
     def __init__(self,name,serveradd,localadd,devNum):
