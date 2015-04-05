@@ -60,5 +60,7 @@ class Sensor:
 
         self.vector[self.cid] = self.vector[self.cid]+1
 
+        return 1
+
 
 
