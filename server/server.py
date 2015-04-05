@@ -14,7 +14,7 @@ import setting
 #class for Gateway
 class Gateway(object):
 	#initial class
-    def __init__(self,sadd):
+    def __init__(self,sadd,devNum):
         #connect to db
         self._n = 1 #number of registered devices
         self._idlist = [["gateway","gateway",sadd,0]]#list for registered devices
@@ -24,6 +24,7 @@ class Gateway(object):
         self.lasttime = -1 #last time the motion sensor was on
         self.log = open("server_log.txt",'w+') #server log file
         self.cid = 0
+        self.vector = [0] * devNum 
         
     # thread for server listening
     def start_listen(self):
@@ -41,6 +42,7 @@ class Gateway(object):
         c = xmlrpclib.ServerProxy(self._idlist[id][2]) #zerorpc.Client()
         #c.connect(self._idlist[id][2])
         #rpc call
+        multicast.multicast(self.serveradd, self.vector)
         state = c.query_state()
         #c.close()
         timestmp = round(time.time()-setting.start_time,2)
@@ -103,6 +105,8 @@ class Gateway(object):
         c = xmlrpclib.ServerProxy(self._idlist[id][2])
         #c.connect(self._idlist[id][2])
         flag = 0
+
+        multicast.multicast(self.serveradd, self.vector)
         if c.change_state(state):
             flag = 1
         #c.close()
@@ -140,6 +144,13 @@ class Gateway(object):
     	#print mode
         self._mode = mode
         return self._mode
+
+    def  update_vector_clock(self,vector):
+        for i in range(len(vector)):
+            if vector[i] > self.vector[i]:
+                self.vector[i] = vector[i]
+
+        self.vector[self.cid] = self.vector[self.cid]+1
 		
 #thread for listening
 class myserver(threading.Thread):
@@ -164,7 +175,9 @@ def readTest(filename,col):
 
 
 timel,action = readTest('test-input.csv',3)
-server = Gateway(setting.serveradd)
+
+devNum = setting.devNum 
+server = Gateway(setting.serveradd,devNum)
 listen_thread = myserver(server)
 listen_thread.start()
 

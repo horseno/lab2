@@ -33,6 +33,7 @@ class SmartDev:
         #self.s.run()
 
     def query_state(self):
+        multicast.multicast(self.localadd, self.vector)
         return self.state
 
     def set_state(self,state):
@@ -49,6 +50,12 @@ class SmartDev:
         with open(filename, 'a') as f:
             f.write(content)
         return 1
-    
+
+    def update_vector_clock(self,vector):
+        for i in range(len(vector)):
+            if vector[i] > self.vector[i]:
+                self.vector[i] = vector[i]
+
+        self.vector[self.cid] = self.vector[self.cid]+1
 
         
