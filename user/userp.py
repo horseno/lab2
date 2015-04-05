@@ -34,9 +34,11 @@ class UserProcess(object):
         #c.connect(setting.serveradd)
     	#self._gid = c.register("user","user",self._localadd)
     	#c.close()
+        return 1
     #rpc interface for text message
     def text_message(self,msg):
         self.log.write(msg+'\n')
+        return 1
     #rpc call for change mode 
     def change_mode(self,mode):
         self.c.change_mode(mode)
@@ -46,6 +48,7 @@ class UserProcess(object):
     	#c.change_mode(mode)
         #self._mode = mode
         #c.close()
+        return 1
 
     def update_vector_clock(self,vector):
         for i in range(len(vector)):

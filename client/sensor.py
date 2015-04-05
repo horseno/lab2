@@ -55,7 +55,6 @@ class Sensor:
         
         multicast.multicast(self.localadd, self.vector)
         self.c.report_state(self.cid, self.state)
-
         return 1
 
     def update_vector_clock(self,vector):
