@@ -40,8 +40,9 @@ def main():
     start_sync()
     temp.register_to_server()
     #wait for query and change instruction
-    while(True):
-        pass
+    time.sleep(30)
+    #while(True):
+    #    pass
 
 
 if __name__ == "__main__":

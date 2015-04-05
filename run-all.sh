@@ -6,6 +6,7 @@ printf "start_time = %s\n" $start_time >> setting.py
 
 #start running the server and clients
 python setting.py &
+python multicast.py &
 python client/smartDev.py & 
 python client/sensor.py &
 

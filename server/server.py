@@ -17,7 +17,7 @@ class Gateway(object):
     def __init__(self,sadd):
         #connect to db
         self._n = 1 #number of registered devices
-        self._idlist = [["gateway","gateway",sadd]]#list for registered devices
+        self._idlist = [["gateway","gateway",sadd,0]]#list for registered devices
         self._mode = "HOME"
         self.serveradd = sadd #server address
         self._idx = {} #index for global id
@@ -45,7 +45,7 @@ class Gateway(object):
         #c.close()
         timestmp = round(time.time()-setting.start_time,2)
         #self.writedb(id,state,timestmp)
-        #self._idlist[id][3] = state
+        self._idlist[id][3] = state
         #log
         self.log.write(str(round(time.time()-setting.start_time,2))+','+self._idlist[id][1]+','+state+'\n')
         print str(round(time.time()-setting.start_time,2))+','+self._idlist[id][1]+','+state+'\n'
@@ -66,7 +66,7 @@ class Gateway(object):
             return -1
         timestmp = round(time.time()-setting.start_time,2)
         #self.writedb(id,state,timestmp)
-        #self._idlist[id][3] = state
+        self._idlist[id][3] = state
         #log
         self.log.write(str(round(time.time()-setting.start_time,2))+','+self._idlist[id][1]+','+state+'\n')
         print str(round(time.time()-setting.start_time,2))+','+self._idlist[id][1]+','+state+'\n'
@@ -111,7 +111,7 @@ class Gateway(object):
     #rpc interface for register
     def register(self,type,name,address):
     	#register device
-        self._idlist.append([type,name,"http://"+address[0]+":"+str(address[1])])
+        self._idlist.append([type,name,"http://"+address[0]+":"+str(address[1]),0])
         #assign global id
         self._idx[name] = self._n
         #increase number of registed device
