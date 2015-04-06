@@ -1,14 +1,20 @@
 #import zerorpc
 import sys
 sys.path.append("./")
+import setting
 import multicast
 import xmlrpclib 
 import SimpleXMLRPCServer
+import socket
+import time
+import random
 
 class Sensor:
     ''' Represents any senors'''
     def __init__(self,name,serveradd,localadd,devNum):
         '''initialize a sensor, create a client to connect to server'''
+       
+        self._timeoffset = 0
         self.name = name
         self.ctype = 'sensor'
         self.localadd = localadd
@@ -18,9 +24,21 @@ class Sensor:
         
         self.state = '0'
         self.vector = [0] * devNum
-
+    def time_syn(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        time.sleep(1+random.random())
+        s.connect(("127.0.0.1",setting.synport))
+        mt = s.recv(1024)
+        offset = time.time()-10.0-float(mt)
+        #time.sleep(3*random.random())
+        s.send(str(offset))
+        moffset = s.recv(1024)
+        print "sensor ",self.name,mt,offset,moffset
+        self._timeoffset = moffset - offset
+        s.close()
     def register_to_server(self):
         '''register with the gateway, sending name, type and listening address'''
+        
         self.cid = self.c.register(self.ctype,self.name,self.localadd)
         return 1
 

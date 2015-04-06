@@ -4,19 +4,37 @@ import SimpleXMLRPCServer
 import time
 import threading
 import csv
+import socket
 import sys
 sys.path.append("./")
 import setting
+import random
 
 #class for user process
 class UserProcess(object):
 	#initial
     def __init__(self,localadd,devNum):
+      
+        self._timeoffset = 0
+        
         self._mode = "HOME"
         self._gid = -1 #global id 
         self._localadd = localadd
         self.log=open("user_output.txt",'w+')#output file
         self.vector = [0]* devNum
+    def time_syn(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        time.sleep(1+random.random())
+        s.connect(("127.0.0.1",setting.synport))
+        mt = s.recv(1024)
+        offset = time.time()+3.0-float(mt)
+        #time.sleep(3*random.random())
+        s.send(str(offset))
+        moffset = s.recv(1024)
+        print "User ",mt,offset,moffset
+        self._timeoffset = moffset - offset
+        s.close()
+        
     #thread for listening 
     def start_listen(self):
         self.s = SimpleXMLRPCServer.SimpleXMLRPCServer(self._localadd)#zerorpc.Server(self)
@@ -83,6 +101,7 @@ def readTest(filename,col):
 timel,action = readTest('test-input.csv',4)
 devNum = setting.devNum
 myuser = UserProcess(setting.localadd["user"],devNum)
+myuser.time_syn()
 listen_thread = user(myuser)
 listen_thread.start()
 #calculate start time

@@ -6,10 +6,14 @@ import sys
 sys.path.append("./")
 import setting
 import multicast
+import socket
+import time
+import random
 
 class SmartDev:
     ''' Represents any smart device'''
     def __init__(self,name,serveradd,localadd,devNum):
+        self._timeoffset = 0
         self.name = name
         self.ctype = 'device'
         self.localadd = localadd
@@ -19,7 +23,20 @@ class SmartDev:
 
         self.state = '1'
         self.vector = [0] * devNum
-
+    def time_syn(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        time.sleep(1+random.random())
+        s.connect(("127.0.0.1",setting.synport))
+        #print "smartDev connected\n"       
+        mt = s.recv(1024)
+        offset = time.time()+5.0-float(mt)
+        #time.sleep(3*random.random())
+        s.send(str(offset))
+        moffset = s.recv(1024)
+        print "smartDev ",self.name,mt,offset,moffset
+        self._timeoffset = moffset - offset
+        s.close()
+        
     def register_to_server(self):
         '''register with the gateway, sending name, type and listening address'''
         self.cid = self.c.register(self.ctype,self.name,self.localadd)   

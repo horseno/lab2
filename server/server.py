@@ -9,13 +9,17 @@ import sys
 sys.path.append("./")
 import setting
 import multicast
-
+import select
+import socket
 
 #class for Gateway
 class Gateway(object):
 	#initial class
     def __init__(self,sadd,devNum):
         #connect to db
+        self._isLeader = 1
+        self._timeoffset = 0
+        
         self._n = 1 #number of registered devices
         self._idlist = [["gateway","gateway",sadd,0]]#list for registered devices
         self._mode = "HOME"
@@ -25,6 +29,36 @@ class Gateway(object):
         self.log = open("server_log.txt",'w+') #server log file
         self.cid = 0
         self.vector = [0] * devNum 
+    def time_syn(self):
+    	connect_list = []
+        syn_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        syn_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        syn_socket.bind(("127.0.0.1", setting.synport))
+        syn_socket.listen(8)
+        print "server listen"
+        while len(connect_list) < 5:
+            sockfd, addr = syn_socket.accept()
+            print addr
+            connect_list.append(sockfd)
+        print "server send"
+        for sk in connect_list:
+            sk.send(str(time.time()))
+        offsets = []
+        ready = []
+        print "server receive"
+        while len(offsets)< 5:#setting.devNum-1
+            read_sockets,write_sockets,error_sockets = select.select(connect_list,[],[])
+            for sk in read_sockets:
+                if sk not in ready:
+                    of = sk.recv(1024)
+                    offsets.append(float(of))
+                    ready.append(sk)   
+        moffset = sum(offsets)/(len(offsets)+1.0)
+        for sk in connect_list:
+            sk.send(str(moffset))
+        self._timeoffset = moffset
+        syn_socket.close()    
+        print "server ",moffset
         
     # thread for server listening
     def start_listen(self):
@@ -179,6 +213,7 @@ timel,action = readTest('test-input.csv',3)
 
 devNum = setting.devNum 
 server = Gateway(setting.serveradd,devNum)
+server.time_syn()
 listen_thread = myserver(server)
 listen_thread.start()
 
