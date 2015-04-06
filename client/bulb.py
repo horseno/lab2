@@ -30,6 +30,7 @@ def main():
         time.sleep(waitT)
 
     temp = smartDev.SmartDev("bulb",serveradd,localadd,devNum)
+    temp.time_syn()
     # create a thread to listen, deal with server pulls
     listen_thread = temperature(temp)
     listen_thread.start()

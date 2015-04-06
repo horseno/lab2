@@ -60,6 +60,7 @@ def main():
         time.sleep(waitT)
 
     temp = sensor.Sensor("temperature",serveradd,localadd,devNum)
+    temp.time_syn()
     # create a thread to listen, deal with server pulls
     listen_thread = temperature(temp)
     listen_thread.start()

@@ -34,7 +34,7 @@ def main():
 
 
     temp = smartDev.SmartDev("outlet",serveradd,localadd,devNum)
-    
+    temp.time_syn()
     listen_thread = temperature(temp)
     listen_thread.start()
 
