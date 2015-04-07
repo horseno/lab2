@@ -32,7 +32,7 @@ class UserProcess(object):
         s.send(str(offset))
         moffset = s.recv(1024)
         print "User ",mt,offset,moffset
-        self._timeoffset = moffset - offset
+        self._timeoffset = float(moffset) - offset
         s.close()
         
     #thread for listening 

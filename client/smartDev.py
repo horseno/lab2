@@ -34,7 +34,7 @@ class SmartDev:
         s.send(str(offset))
         moffset = s.recv(1024)
         print "smartDev ",self.name,mt,offset,moffset
-        self._timeoffset = moffset - offset
+        self._timeoffset = float(moffset) - offset
         s.close()
         
     def register_to_server(self):
