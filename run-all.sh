@@ -16,5 +16,6 @@ python client/bulb.py &
 python client/temperature.py &
 python client/outlet.py &
 python client/motion.py &
+python client/door.py&
 python user/userp.py &
  
