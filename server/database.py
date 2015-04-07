@@ -17,7 +17,7 @@ class Database:
         self.fname = "dbfile.csv"
         self.s = SimpleXMLRPCServer.SimpleXMLRPCServer(Dbadd)#zerorpc.Server(self)
         self.s.register_instance(self)
-        self.s.serve_forever()
+        #self.s.serve_forever()
     
     def str_to_vector(self,string):
         string = string[1:-1].split(',')
@@ -26,6 +26,7 @@ class Database:
         return string 
 
     def write(self, cid, state, timestamp,vector):
+        print "#$^$#"
         with open(self.fname, 'ab') as f:
             curWriter = csv.writer(f)
             curWriter.writerow([cid,state,timestamp,vector])
@@ -80,6 +81,8 @@ class Database:
 def main():
 
     DB = Database(setting.Dbadd)
+    DB.s.serve_forever()
+    print "serve forever!!!!!!\n"
     a = [1,2,3,4,5,6]
     DB.write(1,1,1234,a)
     DB.write(2,1,1235,a)
@@ -87,7 +90,7 @@ def main():
     DB.write(2,1,1259,a)
     
     print DB.read (2,-1)
-
+    time.sleep(30)
 
 if __name__ == "__main__":
     main()
