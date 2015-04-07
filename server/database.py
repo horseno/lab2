@@ -1,7 +1,11 @@
 #import zerorpc
 import xmlrpclib 
 import SimpleXMLRPCServer
+import time
 import csv
+import sys
+sys.path.append("./")
+import setting
 
 def compare_float(f1, f2):
     return abs(f1 - f2) <= 0.001
@@ -11,7 +15,6 @@ class Database:
     def __init__(self,Dbadd):
         #store current state and history state in separate files
         self.fname = "dbfile.csv"
-
         self.s = SimpleXMLRPCServer.SimpleXMLRPCServer(Dbadd)#zerorpc.Server(self)
         self.s.register_instance(self)
         self.s.serve_forever()
@@ -27,7 +30,19 @@ class Database:
             curWriter = csv.writer(f)
             curWriter.writerow([cid,state,timestamp,vector])
         return 1
-
+        
+    def time_syn(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        time.sleep(1+random.random())
+        s.connect(("127.0.0.1",setting.synport))
+        mt = s.recv(1024)
+        offset = time.time()-10.0-float(mt)
+        #time.sleep(3*random.random())
+        s.send(str(offset))
+        moffset = s.recv(1024)
+        print "sensor ",self.name,mt,offset,moffset
+        self._timeoffset = float(moffset) - offset
+        s.close()
 
     def read(self, cid, timestamp):
         '''read the file to get current state/ all the states/ state at a particular time of a device
@@ -64,7 +79,7 @@ class Database:
 
 def main():
 
-    DB = Database("tcp://127.0.0.1:10000")
+    DB = Database(setting.Dbadd)
     a = [1,2,3,4,5,6]
     DB.write(1,1,1234,a)
     DB.write(2,1,1235,a)

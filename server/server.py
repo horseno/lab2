@@ -29,6 +29,7 @@ class Gateway(object):
         self.log = open("server_log.txt",'w+') #server log file
         self.cid = 0
         self.vector = [0] * devNum 
+        
     def time_syn(self):
     	connect_list = []
         syn_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -79,8 +80,8 @@ class Gateway(object):
         multicast.multicast(self.serveradd, self.vector)
         state = c.query_state()
         #c.close()
-        timestmp = round(time.time()-setting.start_time,2)
-        #self.writedb(id,state,timestmp)
+        timestmp = round(time.time()+self._timeoffset-setting.start_time,2)
+        self.writedb(id,state,timestmp,self.vector)
         self._idlist[id][3] = state
         #log
         self.log.write(str(round(time.time()-setting.start_time,2))+','+self._idlist[id][1]+','+state+'\n')
@@ -89,10 +90,18 @@ class Gateway(object):
         if self._idlist[id][1] == "motion" and state == '1':
             self.lasttime = time.time()
         return state
-    def writedb(id,state,timestmp):
-        return
-    def readdb(id,timestmp):
-        return
+        
+    def writedb(self,id,state,timestmp,vector):
+        c = xmlrpclib.ServerProxy("http://"+setting.Dbadd[0]+":"+str(setting.Dbadd[1]))
+        c.write(id,state,timestmp,vector)
+        
+        return 1
+        
+    def readdb(self,id,timestmp):
+        c = xmlrpclib.ServerProxy("http://"+setting.Dbadd[0]+":"+str(setting.Dbadd[1]))
+        c.read(id,timestmp)
+        return 1
+        
     #rpc interface for report state
     def report_state(self, id, state):
     	#checking invalidate id
@@ -100,8 +109,8 @@ class Gateway(object):
         if id >= self._n:
             print "Wrong Id"
             return -1
-        timestmp = round(time.time()-setting.start_time,2)
-        #self.writedb(id,state,timestmp)
+        timestmp = round(time.time()+self._timeoffset-setting.start_time,2)
+        self.writedb(id,state,timestmp,self.vector)
         self._idlist[id][3] = state
         #log
         self.log.write(str(round(time.time()-setting.start_time,2))+','+self._idlist[id][1]+','+state+'\n')
