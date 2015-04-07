@@ -11,6 +11,7 @@ python client/smartDev.py &
 python client/sensor.py &
 
 python server/server.py &
+python server/database.py &
 python client/bulb.py &
 python client/temperature.py &
 python client/outlet.py &
