@@ -3,6 +3,9 @@ import xmlrpclib
 import SimpleXMLRPCServer
 import csv
 
+def compare_float(f1, f2):
+    return abs(f1 - f2) <= 0.001
+
 class Database:
     '''Backend Database'''
     def __init__(self,Dbadd):
@@ -35,24 +38,26 @@ class Database:
          '''
         state_l=[]
         maxtime = 0 
-        curState = -1
+        curState = '-1'
         with open(self.fname, 'rb') as f:
             curReader = csv.reader(f)
             for row in reversed(list(curReader)):
+                qid = row[0]
                 vector = self.str_to_vector(row[3])
-                if int(row[0])==cid:
+                state = str(row[1])
+                time = float(row[2])
+                if int(qid)==cid:
                     if timestamp < 0:
-                        state_l.append((int(row[1]),int(row[2]),vector))
+                        state_l.append((state,time,vector))
                         #print state_l
-                    elif timestamp >0 and timestamp == int(row[2]):
-                        state_l.append((int(row[1]),int(row[2]),vector))
-                    elif timestamp == 0 and int(row[2])>maxtime:
-                        curState = int(row[1]) 
-                        maxtime = int(row[2]) 
-            if timestamp == 0 and curState != -1:
+                    elif timestamp >0 and compare_float(timestamp,time):
+                        state_l.append((state,time,vector))
+                    elif compare_float(timestamp,0) and time>maxtime:
+                        curState = state
+                        maxtime = time 
+            if compare_float(timestamp,0) and curState != '-1':
                 state_l.append((curState, maxtime,vector))
 
-            
                         
         return state_l
 
@@ -66,7 +71,7 @@ def main():
     DB.write(1,0,1256,a)
     DB.write(2,1,1259,a)
     
-    print DB.read (2,0)
+    print DB.read (2,-1)
 
 
 if __name__ == "__main__":
