@@ -11,11 +11,11 @@ python client/smartDev.py &
 python client/sensor.py &
 
 python server/server.py &
-python server/database.py &
+#python server/database.py &
 python client/bulb.py &
-python client/temperature.py &
-python client/outlet.py &
-python client/motion.py &
-python client/door.py&
+#python client/temperature.py &
+#python client/outlet.py &
+#python client/motion.py &
+#python client/door.py&
 python user/userp.py &
  

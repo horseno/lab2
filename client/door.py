@@ -59,11 +59,12 @@ def main():
         time.sleep(waitT)
 
     temp = sensor.Sensor("door",serveradd,localadd,devNum)
-    temp.time_syn()
+    
     # create a thread to listen, deal with server pulls
     listen_thread = temperature(temp)
     listen_thread.start()
-
+    temp.time_syn()
+    
     timel,action= readTest('test-input.csv',2)
 
     start_sync()

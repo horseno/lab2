@@ -17,9 +17,9 @@ class Gateway(object):
 	#initial class
     def __init__(self,sadd,devNum):
         #connect to db
-        self._isLeader = 1
+        self._isLeader = 0
+        self._electID = 0.1#random.random()
         self._timeoffset = 0
-        
         self._n = 1 #number of registered devices
         self._idlist = [["gateway","gateway",sadd,0]]#list for registered devices
         self._mode = "HOME"
@@ -29,37 +29,91 @@ class Gateway(object):
         self.log = open("server_log.txt",'w+') #server log file
         self.cid = 0
         self.vector = [0] * devNum 
-        
+
+    def leader_elect(self):
+        elect_list = ["server"]
+        elect_dict = {"server":('', setting.eleport)}
+        elt_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        elt_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
+        elt_socket.bind(('', setting.eleport))
+        n = 1
+        while n<3:
+            print "Listening"
+            recv_data, addr = elt_socket.recvfrom(2048)
+            print recv_data,addr
+            if recv_data not in elect_list:
+                elect_list.append(recv_data)
+                elect_dict[recv_data] = addr
+                n = n+1
+        for k in range(1,n):
+            elt_socket.sendto(str(elect_dict[elect_list[(k+1)%n]]),elect_dict[elect_list[k]])
+        #elt.socket.sendto(
+        msg = "ele#"+str(self._electID)
+        elt_socket.sendto(msg,elect_dict[elect_list[1]])
+        recv_data, addr = elt_socket.recvfrom(2048)
+        ld = -1
+        print recv_data,addr
+        eidlist = recv_data.split("#")
+        if eidlist[0] == "ele":
+            eidlist = eidlist[1:]
+            maxid = -1
+            for i in range(n):
+               if float(eidlist[i])>maxid:
+                   maxid = float(eidlist[i])
+                   ld = i
+        if ld == 0:
+            self._isLeader = 1
+        for i in range(1,n):
+            if ld == i:
+                elt_socket.sendto("1",elect_dict[elect_list[i]])
+            else:
+                elt_socket.sendto("0",elect_dict[elect_list[i]])
+        print "server ",self._isLeader 
+        return 1
+            
     def time_syn(self):
-    	connect_list = []
-        syn_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        syn_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        syn_socket.bind(("127.0.0.1", setting.synport))
-        syn_socket.listen(8)
-        print "server listen"
-        while len(connect_list) < 5:
-            sockfd, addr = syn_socket.accept()
-            print addr
-            connect_list.append(sockfd)
-        print "server send"
-        for sk in connect_list:
-            sk.send(str(time.time()))
-        offsets = []
-        ready = []
-        print "server receive"
-        while len(offsets)< 5:#setting.devNum-1
-            read_sockets,write_sockets,error_sockets = select.select(connect_list,[],[])
-            for sk in read_sockets:
-                if sk not in ready:
-                    of = sk.recv(1024)
-                    offsets.append(float(of))
-                    ready.append(sk)   
-        moffset = sum(offsets)/(len(offsets)+1.0)
-        for sk in connect_list:
-            sk.send(str(moffset))
-        self._timeoffset = moffset
-        syn_socket.close()    
-        print "server ",moffset
+        if self._isLeader == 1:
+    	    connect_list = []
+            syn_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            syn_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            syn_socket.bind(("127.0.0.1", setting.synport))
+            syn_socket.listen(8)
+        #print "server listen"
+            while len(connect_list) < 5:
+                sockfd, addr = syn_socket.accept()
+                print addr
+                connect_list.append(sockfd)
+            #print "server send"
+            for sk in connect_list:
+                sk.send(str(time.time()))
+            offsets = []
+            ready = []
+        #print "server receive"
+            while len(offsets)< 5:#setting.devNum-1
+                read_sockets,write_sockets,error_sockets = select.select(connect_list,[],[])
+                for sk in read_sockets:
+                    if sk not in ready:
+                        of = sk.recv(1024)
+                        offsets.append(float(of))
+                        ready.append(sk)   
+            moffset = sum(offsets)/(len(offsets)+1.0)
+            for sk in connect_list:
+                sk.send(str(moffset))
+            self._timeoffset = moffset
+            syn_socket.close()    
+        #print "server ",moffset
+        else: 
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            time.sleep(1+random.random())
+            s.connect(("127.0.0.1",setting.synport))
+            mt = s.recv(1024)
+            offset = time.time()+3.0-float(mt)
+        #time.sleep(3*random.random())
+            s.send(str(offset))
+            moffset = s.recv(1024)
+        #print "User ",mt,offset,moffset
+            self._timeoffset = float(moffset) - offset
+            s.close()
         
     # thread for server listening
     def start_listen(self):
@@ -223,9 +277,11 @@ timel,action = readTest('test-input.csv',3)
 
 devNum = setting.devNum 
 server = Gateway(setting.serveradd,devNum)
+server.leader_elect()
 server.time_syn()
 listen_thread = myserver(server)
 listen_thread.start()
+
 
 #calcuate start time
 current_time = int(time.time())
