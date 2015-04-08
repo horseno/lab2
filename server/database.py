@@ -5,6 +5,8 @@ import time
 import csv
 import sys
 sys.path.append("./")
+sys.path.append("../")
+
 import setting
 
 def compare_float(f1, f2):
@@ -15,9 +17,10 @@ class Database:
     def __init__(self,Dbadd):
         #store current state and history state in separate files
         self.fname = "dbfile.csv"
-        self.s = SimpleXMLRPCServer.SimpleXMLRPCServer(Dbadd,logRequests=False)#zerorpc.Server(self)
-        self.s.register_instance(self)
-        self.s.serve_forever()
+        
+        #self.s = SimpleXMLRPCServer.SimpleXMLRPCServer(Dbadd,logRequests=False)#zerorpc.Server(self)
+        #self.s.register_instance(self)
+        #self.s.serve_forever()
     
     def str_to_vector(self,string):
         string = string[1:-1].split(',')
@@ -76,20 +79,39 @@ class Database:
 
                         
         return state_l
+    def read_offset(self, cid, timestamp, offset):
+        li=[]
+        with open(self.fname, 'rb') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                qid = int(row[0])
+                state = str(row[1])
+                time = float(row[2])
+                if qid == cid and (time> timestamp - offset) and (time <timestamp):
+                    if state == '1':
+                        li.append(1)
+                    else:
+                        li.append(0)
+        print li
+        if sum(li) > 0:
+            return 1
+        else:
+            return 0
+ 
 
 
 def main():
 
     DB = Database(setting.Dbadd)
-    #DB.s.serve_forever()
-    print "serve forever!!!!!!\n"
     a = [1,2,3,4,5,6]
     DB.write(1,1,1234,a)
     DB.write(2,1,1235,a)
+    DB.write(2,0,1254,a)
     DB.write(1,0,1256,a)
     DB.write(2,1,1259,a)
     
     print DB.read (2,-1)
+    print DB.read_offset(1,1259, 10)
     time.sleep(30)
 
 if __name__ == "__main__":
