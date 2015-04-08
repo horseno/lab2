@@ -63,7 +63,7 @@ class Gateway(object):
         
     # thread for server listening
     def start_listen(self):
-        self.s = SimpleXMLRPCServer.SimpleXMLRPCServer(self.serveradd)#zerorpc.Server(self)
+        self.s = SimpleXMLRPCServer.SimpleXMLRPCServer(self.serveradd,logRequests=False)#zerorpc.Server(self)
         self.s.register_instance(self)#self.s.bind(self.serveradd)
         self.s.serve_forever()#self.s.run()
     
@@ -74,7 +74,7 @@ class Gateway(object):
             print "Wrong Id"
             return -1
         #set up connection
-        c = xmlrpclib.ServerProxy(self._idlist[id][2]) #zerorpc.Client()
+        c = xmlrpclib.ServerProxy(self._idlist[id][2],verbose=0) #zerorpc.Client()
         #c.connect(self._idlist[id][2])
         #rpc call
         multicast.multicast(self.serveradd, self.vector)
@@ -92,14 +92,14 @@ class Gateway(object):
         return state
         
     def writedb(self,id,state,timestmp,vector):
-        c = xmlrpclib.ServerProxy("http://"+setting.Dbadd[0]+":"+str(setting.Dbadd[1]))
+        c = xmlrpclib.ServerProxy("http://"+setting.Dbadd[0]+":"+str(setting.Dbadd[1]),verbose=0)
         print "#$#$#$#"
         c.write(id,state,timestmp,vector)
         print "####"
         return 1
         
     def readdb(self,id,timestmp):
-        c = xmlrpclib.ServerProxy("http://"+setting.Dbadd[0]+":"+str(setting.Dbadd[1]))
+        c = xmlrpclib.ServerProxy("http://"+setting.Dbadd[0]+":"+str(setting.Dbadd[1]),verbose=0)
         c.read(id,timestmp)
         return 1
         
@@ -146,7 +146,7 @@ class Gateway(object):
         #set up connection
         #c = zerorpc.Client()
         #rpc call
-        c = xmlrpclib.ServerProxy(self._idlist[id][2])
+        c = xmlrpclib.ServerProxy(self._idlist[id][2],verbose=0)
         #c.connect(self._idlist[id][2])
         flag = 0
 
@@ -177,7 +177,7 @@ class Gateway(object):
             print "No user process"
             return
         #set up connection
-        c = xmlrpclib.ServerProxy(self._idlist[self._idx["user"]][2])#zerorpc.Client()
+        c = xmlrpclib.ServerProxy(self._idlist[self._idx["user"]][2],verbose=0)#zerorpc.Client()
         #rpc call
         #c.connect(self._idlist[self._idx["user"]][2])
         c.text_message(str(round(time.time()-setting.start_time,2))+","+msg)

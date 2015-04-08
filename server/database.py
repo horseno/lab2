@@ -15,7 +15,7 @@ class Database:
     def __init__(self,Dbadd):
         #store current state and history state in separate files
         self.fname = "dbfile.csv"
-        self.s = SimpleXMLRPCServer.SimpleXMLRPCServer(Dbadd)#zerorpc.Server(self)
+        self.s = SimpleXMLRPCServer.SimpleXMLRPCServer(Dbadd,logRequests=False)#zerorpc.Server(self)
         self.s.register_instance(self)
         self.s.serve_forever()
     

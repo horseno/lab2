@@ -37,7 +37,7 @@ class UserProcess(object):
         
     #thread for listening 
     def start_listen(self):
-        self.s = SimpleXMLRPCServer.SimpleXMLRPCServer(self._localadd)#zerorpc.Server(self)
+        self.s = SimpleXMLRPCServer.SimpleXMLRPCServer(self._localadd,logRequests=False)#zerorpc.Server(self)
         self.s.register_instance(self)
         self.s.serve_forever()
     	#s = zerorpc.Server(self)
@@ -46,7 +46,7 @@ class UserProcess(object):
     
     #rpc call for register
     def register(self):
-        self.c = xmlrpclib.ServerProxy("http://"+setting.serveradd[0]+":"+str(setting.serveradd[1]))
+        self.c = xmlrpclib.ServerProxy("http://"+setting.serveradd[0]+":"+str(setting.serveradd[1]),verbose=0)
         self._gid = self.c.register("user","user",self._localadd)
     	#c = zerorpc.Client()
         #c.connect(setting.serveradd)

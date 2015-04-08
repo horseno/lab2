@@ -19,7 +19,7 @@ class Sensor:
         self.ctype = 'sensor'
         self.localadd = localadd
 
-        self.c = xmlrpclib.ServerProxy("http://"+serveradd[0]+":"+str(serveradd[1]))#self.c = zerorpc.Client()
+        self.c = xmlrpclib.ServerProxy("http://"+serveradd[0]+":"+str(serveradd[1]),verbose=0)#self.c = zerorpc.Client()
         #self.c.connect(serveradd)
         
         self.state = '0'
@@ -44,7 +44,7 @@ class Sensor:
 
     def start_listen(self):
         '''To enable communication with the gateway, start a server to catch queries and instructions'''
-        self.s = SimpleXMLRPCServer.SimpleXMLRPCServer(self.localadd)#zerorpc.Server(self)
+        self.s = SimpleXMLRPCServer.SimpleXMLRPCServer(self.localadd,logRequests=False)#zerorpc.Server(self)
         self.s.register_instance(self)
         self.s.serve_forever()
         #self.s = zerorpc.Server(self)
