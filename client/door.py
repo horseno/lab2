@@ -61,9 +61,11 @@ def main():
     temp = sensor.Sensor("door",serveradd,localadd,devNum)
     
     # create a thread to listen, deal with server pulls
+    temp.leader_elect()
+    temp.time_syn()
     listen_thread = temperature(temp)
     listen_thread.start()
-    temp.time_syn()
+    
     
     timel,action= readTest('test-input.csv',2)
 

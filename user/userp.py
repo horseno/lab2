@@ -5,6 +5,7 @@ import time
 import threading
 import csv
 import socket
+import select
 import sys
 sys.path.append("./")
 import setting
@@ -15,7 +16,7 @@ class UserProcess(object):
 	#initial
     def __init__(self,localadd,devNum):
         self._isLeader = 0
-        self._electID = 0.2#random.random()
+        self._electID = random.random()
         self._timeoffset = 0
         
         self._mode = "HOME"
@@ -23,6 +24,7 @@ class UserProcess(object):
         self._localadd = localadd
         self.log=open("user_output.txt",'w+')#output file
         self.vector = [0]* devNum
+    
     def leader_elect(self):
         time.sleep(1+random.random())
         address = ('<broadcast>', setting.eleport)
@@ -41,7 +43,7 @@ class UserProcess(object):
         if id_data == "1":
            self._isLeader = 1
         #time.sleep(10)
-        print "user ",self._isLeader 
+        print "user ",self._electID,self._isLeader 
         return 1
         
     def time_syn(self):
@@ -52,7 +54,7 @@ class UserProcess(object):
             syn_socket.bind(("127.0.0.1", setting.synport))
             syn_socket.listen(8)
         #print "server listen"
-            while len(connect_list) < 5:
+            while len(connect_list) < setting.devNum-1:
                 sockfd, addr = syn_socket.accept()
                 print addr
                 connect_list.append(sockfd)
@@ -62,7 +64,7 @@ class UserProcess(object):
             offsets = []
             ready = []
         #print "server receive"
-            while len(offsets)< 5:#setting.devNum-1
+            while len(offsets)< setting.devNum-1:#setting.devNum-1
                 read_sockets,write_sockets,error_sockets = select.select(connect_list,[],[])
                 for sk in read_sockets:
                     if sk not in ready:

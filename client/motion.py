@@ -56,14 +56,16 @@ def main():
         '''sync time of different process before running'''
         current_time = int(time.time())
         waitT = setting.start_time - current_time
+        print "motion wait time ",setting.start_time,current_time,waitT
         time.sleep(waitT)
 
     temp = sensor.Sensor("motion",serveradd,localadd,devNum)
     
     # create a thread to listen, deal with server pulls
+    temp.leader_elect()
+    temp.time_syn()
     listen_thread = temperature(temp)
     listen_thread.start()
-    temp.time_syn()
 
     timel,action= readTest('test-input.csv',2)
 

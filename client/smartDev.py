@@ -7,6 +7,7 @@ sys.path.append("./")
 import setting
 import multicast
 import socket
+import select
 import time
 import random
 
@@ -16,7 +17,7 @@ class SmartDev:
         self._isLeader = 0
         self._timeoffset = 0
         self.name = name
-        self._electID = 0.5
+        self._electID = random.random()
         self.ctype = 'device'
         self.localadd = localadd
         self.c = xmlrpclib.ServerProxy("http://"+serveradd[0]+":"+str(serveradd[1]),verbose=0)
@@ -44,7 +45,7 @@ class SmartDev:
         if id_data == "1":
            self._isLeader = 1
         #time.sleep(10)
-        print self.name,self._isLeader 
+        print self.name,self._electID,self._isLeader 
         return 1
 
     def time_syn(self):
@@ -55,7 +56,7 @@ class SmartDev:
             syn_socket.bind(("127.0.0.1", setting.synport))
             syn_socket.listen(8)
         #print "server listen"
-            while len(connect_list) < 5:
+            while len(connect_list) < setting.devNum-1:
                 sockfd, addr = syn_socket.accept()
                 print addr
                 connect_list.append(sockfd)
@@ -65,7 +66,7 @@ class SmartDev:
             offsets = []
             ready = []
         #print "server receive"
-            while len(offsets)< 5:#setting.devNum-1
+            while len(offsets)< setting.devNum-1:#setting.devNum-1
                 read_sockets,write_sockets,error_sockets = select.select(connect_list,[],[])
                 for sk in read_sockets:
                     if sk not in ready:

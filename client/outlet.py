@@ -34,10 +34,11 @@ def main():
 
 
     temp = smartDev.SmartDev("outlet",serveradd,localadd,devNum)
-    
+    temp.leader_elect()
+    temp.time_syn()
     listen_thread = temperature(temp)
     listen_thread.start()
-    temp.time_syn()
+
 
     start_sync()
     temp.register_to_server()

@@ -18,7 +18,7 @@ class Gateway(object):
     def __init__(self,sadd,devNum):
         #connect to db
         self._isLeader = 0
-        self._electID = 0.1#random.random()
+        self._electID = random.random()
         self._timeoffset = 0
         self._n = 1 #number of registered devices
         self._idlist = [["gateway","gateway",sadd,0]]#list for registered devices
@@ -37,7 +37,7 @@ class Gateway(object):
         elt_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
         elt_socket.bind(('', setting.eleport))
         n = 1
-        while n<3:
+        while n<setting.devNum:
             print "Listening"
             recv_data, addr = elt_socket.recvfrom(2048)
             print recv_data,addr
@@ -68,7 +68,7 @@ class Gateway(object):
                 elt_socket.sendto("1",elect_dict[elect_list[i]])
             else:
                 elt_socket.sendto("0",elect_dict[elect_list[i]])
-        print "server ",self._isLeader 
+        print "server ",self._electID,self._isLeader 
         return 1
             
     def time_syn(self):
@@ -79,7 +79,7 @@ class Gateway(object):
             syn_socket.bind(("127.0.0.1", setting.synport))
             syn_socket.listen(8)
         #print "server listen"
-            while len(connect_list) < 5:
+            while len(connect_list) < setting.devNum-1:
                 sockfd, addr = syn_socket.accept()
                 print addr
                 connect_list.append(sockfd)
@@ -89,7 +89,7 @@ class Gateway(object):
             offsets = []
             ready = []
         #print "server receive"
-            while len(offsets)< 5:#setting.devNum-1
+            while len(offsets)< setting.devNum-1:#setting.devNum-1
                 read_sockets,write_sockets,error_sockets = select.select(connect_list,[],[])
                 for sk in read_sockets:
                     if sk not in ready:
