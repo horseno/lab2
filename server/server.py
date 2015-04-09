@@ -147,9 +147,9 @@ class Gateway(object):
         
     def writedb(self,id,state,timestmp,vector):
         c = xmlrpclib.ServerProxy("http://"+setting.Dbadd[0]+":"+str(setting.Dbadd[1]),verbose=0)
-        print "#$#$#$#"
+        #print "#$#$#$#"
         c.write(id,state,timestmp,vector)
-        print "####"
+        #print "####"
         return 1
         
     def readdb(self,id,timestmp):
