@@ -152,7 +152,7 @@ def readTest(filename,col):
                 action.append(row[col])     
             return time, action    
         
-timel,action = readTest('test-input.csv',4)
+timel,action = readTest('test-input.csv',6)
 devNum = setting.devNum
 myuser = UserProcess(setting.localadd["user"],devNum)
 

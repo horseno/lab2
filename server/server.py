@@ -273,7 +273,7 @@ def readTest(filename,col):
            return time, action
 
 
-timel,action = readTest('test-input.csv',3)
+timel,action = readTest('test-input.csv',5)
 
 devNum = setting.devNum 
 server = Gateway(setting.serveradd,devNum)

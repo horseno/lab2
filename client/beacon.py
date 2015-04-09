@@ -67,7 +67,7 @@ def main():
     listen_thread.start()
     
     
-    timel,action= readTest('test-input.csv',2)
+    timel,action= readTest('test-input.csv',4)
 
     start_sync()
     interaction(temp,timel,action)  
