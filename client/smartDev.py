@@ -22,6 +22,9 @@ class SmartDev:
         self.c = xmlrpclib.ServerProxy("http://"+serveradd[0]+":"+str(serveradd[1]),verbose=0)#rpc server
         self.state = '1'
         self.vector = [0] * devNum #vector clock
+        filename = "results/devout-" + self.name + '.txt' 
+        f = open(filename,"w+")
+        f.close()
 
     def leader_elect(self):
         time.sleep(1+random.random()) #wait for server setting up
@@ -42,7 +45,8 @@ class SmartDev:
         id_data, addr = clt_socket.recvfrom(2048)
         if id_data == "1":
            self._isLeader = 1
-        print self.name,self._electID,self._isLeader 
+        if self._isLeader == 1:
+            print self.name,"is Leader"
         return 1
 
     def time_syn(self):
@@ -91,6 +95,7 @@ class SmartDev:
             #set its own offset
             self._timeoffset = float(moffset) - offset
             s.close()
+        print self.name,"time offset",self._timeoffset
         
     def register_to_server(self):
         '''register with the gateway, sending name, type and listening address'''

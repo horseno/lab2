@@ -72,8 +72,9 @@ class Gateway(object):
                 elt_socket.sendto("1",elect_dict[elect_list[i]])
             else:
                 elt_socket.sendto("0",elect_dict[elect_list[i]])
-        print "server ",self._electID,self._isLeader 
         elt_socket.close()
+        if self._isLeader == 1:
+            print "Gateway is Leader"
         return 1
             
     #time synchronization
@@ -123,6 +124,7 @@ class Gateway(object):
             #set its own offset
             self._timeoffset = float(moffset) - offset
             s.close()
+        print "Gateway time offset",self._timeoffset
         
     # thread for server listening
     def start_listen(self):
@@ -193,18 +195,17 @@ class Gateway(object):
         self.writedb(id,state,timestmp,self.vector)
         #log
         self.log.write(str(round(time.time()-setting.start_time,2))+','+self._idlist[id][1]+','+state+'\n')
-        print str(round(time.time()+self._timeoffset-setting.start_time,2))+','+self._idlist[id][1]+','+state+'\n'
+        print str(timestmp)+','+self._idlist[id][1]+','+state+'\n'
     	#event ordering
-        if self._idlist[id][1] == "motion" or self._idlist[id][1] == "door":
+        if state == '1' and (self._idlist[id][1] == "motion" or self._idlist[id][1] == "door"):
             if self._idlist[id][1] == "motion":
                 ds = self.readdb(self._idx["door"],timestmp)
                 bs = self.readdb(self._idx["beacon"],timestmp)
                 if ds == 1 and bs == 1 and self._mode == "AWAY":
                     self._mode = "HOME"
-            else:
+            else:   
                 ms = self.readdb(self._idx["motion"],timestmp)
-                bs = self.readdb(self._idx["beacon"],timestmp)
-                if ms == 1 and bs == 1 and self._mode == "HOME":
+                if ms == 1 and self._mode == "HOME":
                     self._mode = "AWAY" 
             print "Server mode:",server._mode
 

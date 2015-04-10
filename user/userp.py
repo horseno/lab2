@@ -43,7 +43,8 @@ class UserProcess(object):
         #receive election result
         if id_data == "1":
            self._isLeader = 1
-        print "user ",self._electID,self._isLeader 
+        if self._isLeader == 1:
+            print "User is Leader"
         return 1
         
     def time_syn(self):
@@ -92,6 +93,7 @@ class UserProcess(object):
             #set its own offset
             self._timeoffset = float(moffset) - offset
             s.close()
+        print "User time offset",self._timeoffset
         
     #thread for listening 
     def start_listen(self):

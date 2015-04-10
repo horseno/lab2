@@ -54,6 +54,8 @@ class Database:
         id_data, addr = clt_socket.recvfrom(2048)
         if id_data == "1":
            self._isLeader = 1
+        if self._isLeader == 1:
+            print "DB is Leader"
         return 1 
       
     def time_syn(self):
@@ -102,6 +104,7 @@ class Database:
             #set its own offset
             self._timeoffset = float(moffset) - offset
             s.close()
+        print "DB time offset",self._timeoffset
 
     def read(self, cid, timestamp):
         '''read the file to get current state/ all the states/ state at a particular time of a device
