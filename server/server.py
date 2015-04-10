@@ -148,8 +148,9 @@ class Gateway(object):
         state = c.query_state()
         #get timestamp
         timestmp = round(time.time()+self._timeoffset-setting.start_time,2)
-        
+        t1 = time.time()
         self.writedb(id,state,timestmp,self.vector)
+        print "writedb takes",time.time()-t1
         #log
         self.log.write(str(round(time.time()+self._timeoffset-setting.start_time,2))+','+self._idlist[id][1]+','+state+'\n')
         print str(round(time.time()+self._timeoffset-setting.start_time,2))+','+self._idlist[id][1]+','+state+'\n'
@@ -192,19 +193,25 @@ class Gateway(object):
             return -1
         #get timestamp
         timestmp = round(time.time()+self._timeoffset-setting.start_time,2)
+        t1 =time.time()
         self.writedb(id,state,timestmp,self.vector)
+        print "writedb takes",time.time()-t1
         #log
         self.log.write(str(round(time.time()-setting.start_time,2))+','+self._idlist[id][1]+','+state+'\n')
         print str(timestmp)+','+self._idlist[id][1]+','+state+'\n'
     	#event ordering
         if state == '1' and (self._idlist[id][1] == "motion" or self._idlist[id][1] == "door"):
             if self._idlist[id][1] == "motion":
+                t0 = time.time()
                 ds = self.readdb(self._idx["door"],timestmp)
                 bs = self.readdb(self._idx["beacon"],timestmp)
+                print "readdb takes",time.time()-t0
                 if ds == 1 and bs == 1 and self._mode == "AWAY":
                     self._mode = "HOME"
-            else:   
+            else:
+                t0 = time.time()   
                 ms = self.readdb(self._idx["motion"],timestmp)
+                print "readdb takes",time.time()-t0
                 if ms == 1 and self._mode == "HOME":
                     self._mode = "AWAY" 
             print "Server mode:",server._mode
