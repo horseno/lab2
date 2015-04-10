@@ -21,7 +21,7 @@ class UserProcess(object):
         self._mode = "HOME"
         self._gid = -1 #global id 
         self._localadd = localadd
-        self.log=open("user_output.txt",'w+') #output file
+        self.log=open("results/user_output.txt",'w+') #output file
         self.vector = [0]* devNum #vector clock
     
     def leader_elect(self):

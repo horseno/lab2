@@ -117,7 +117,7 @@ class SmartDev:
         self.state = state
         cur_t = time.time()+self._timeoffset 
         timestamp = round(cur_t - setting.start_time, 2)
-        filename = "devout-" + self.name + '.txt' 
+        filename = "results/devout-" + self.name + '.txt' 
         content = str(timestamp) + ',' + str(self.state)+ '\n'
         with open(filename, 'a') as f:
             f.write(content)

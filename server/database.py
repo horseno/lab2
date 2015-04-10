@@ -13,8 +13,9 @@ class Database:
     '''Backend Database'''
     def __init__(self,Dbadd):
         #store current state and history state in separate files
-        self.fname = "dbfile.csv"
-        
+        self.fname = "results/dbfile.csv"
+        f = open(self.fname,"w+")
+        f.close()
         self._isLeader = 0 #whether it is leader
         self._electID = 0 #id for election
         
