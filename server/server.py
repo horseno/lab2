@@ -196,7 +196,6 @@ class Gateway(object):
         print str(round(time.time()+self._timeoffset-setting.start_time,2))+','+self._idlist[id][1]+','+state+'\n'
     	#event ordering
         if self._idlist[id][1] == "motion" or self._idlist[id][1] == "door":
-            #compare the order of motion and door event
             if self._idlist[id][1] == "motion":
                 ds = self.readdb(self._idx["door"],timestmp)
                 bs = self.readdb(self._idx["beacon"],timestmp)
@@ -206,9 +205,9 @@ class Gateway(object):
                 ms = self.readdb(self._idx["motion"],timestmp)
                 bs = self.readdb(self._idx["beacon"],timestmp)
                 if ms == 1 and bs == 1 and self._mode == "HOME":
-                    self._mode = "AWAY"     
+                    self._mode = "AWAY" 
             print "Server mode:",server._mode
-            
+
         if self._idlist[id][1] == "motion":
             #home mode 
             if server._mode == "HOME":
