@@ -4,7 +4,6 @@ import time
 import csv
 import sys
 sys.path.append("./")
-#sys.path.append("../")
 import setting
 
 def compare_float(f1, f2):
@@ -132,7 +131,8 @@ class Database:
             if compare_float(timestamp,0) and curState != '-1':
                 state_l.append((curState, maxtime,vector))   
         return state_l
-        
+    
+    #get device state within an offset of the timestamp
     def read_offset(self, cid, timestamp, offset):
         li=[]
         with open(self.fname, 'rb') as f:

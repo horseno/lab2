@@ -1,4 +1,3 @@
-#import zerorpc
 import xmlrpclib 
 import SimpleXMLRPCServer
 import time
@@ -15,77 +14,82 @@ import random
 class UserProcess(object):
 	#initial
     def __init__(self,localadd,devNum):
-        self._isLeader = 0
-        self._electID = random.random()
-        self._timeoffset = 0
+        self._isLeader = 0 #whether it is leader
+        self._electID = random.random() #id for election
+        self._timeoffset = 0 #synchronized time offset
         
         self._mode = "HOME"
         self._gid = -1 #global id 
         self._localadd = localadd
-        self.log=open("user_output.txt",'w+')#output file
-        self.vector = [0]* devNum
+        self.log=open("user_output.txt",'w+') #output file
+        self.vector = [0]* devNum #vector clock
     
     def leader_elect(self):
-        time.sleep(1+random.random())
+        time.sleep(1+random.random())  #wait for server setting up
         address = ('<broadcast>', setting.eleport)
         clt_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         clt_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        clt_socket.sendto("user", address)
-        print "usr sent"
+        clt_socket.sendto("user", address) #broadcast its address to register for election
+        #receive next node's address in the ring
         nextadd, addr = clt_socket.recvfrom(2048)
         tmp = nextadd[1:-1].split(",")
         nextadd = (tmp[0][1:-1],int(tmp[1]))
-        print nextadd,addr
+        #receive election message
         recv_data, preaddr = clt_socket.recvfrom(2048)
+        #add its election id
         recv_data = recv_data+"#"+str(self._electID)
         clt_socket.sendto(recv_data, nextadd)
         id_data, addr = clt_socket.recvfrom(2048)
+        #receive election result
         if id_data == "1":
            self._isLeader = 1
-        #time.sleep(10)
         print "user ",self._electID,self._isLeader 
         return 1
         
     def time_syn(self):
+        #as master
         if self._isLeader == 1:
             connect_list = []
             syn_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             syn_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            syn_socket.bind(("127.0.0.1", setting.synport))
+            syn_socket.bind(("127.0.0.1", setting.synport))#port for listening slaves' connection
             syn_socket.listen(8)
-        #print "server listen"
+            #getting slaves' address
             while len(connect_list) < setting.devNum-1:
                 sockfd, addr = syn_socket.accept()
-                print addr
                 connect_list.append(sockfd)
-            #print "server send"
+            #send master's current time
             for sk in connect_list:
                 sk.send(str(time.time()))
             offsets = []
             ready = []
-        #print "server receive"
+            #get offsets   
             while len(offsets)< setting.devNum-1:#setting.devNum-1
                 read_sockets,write_sockets,error_sockets = select.select(connect_list,[],[])
                 for sk in read_sockets:
                     if sk not in ready:
                         of = sk.recv(1024)
                         offsets.append(float(of))
-                        ready.append(sk)   
+                        ready.append(sk)  
+            #average offsets 
             moffset = sum(offsets)/(len(offsets)+1.0)
+            #send average offset
             for sk in connect_list:
                 sk.send(str(moffset))
             self._timeoffset = moffset
-            syn_socket.close()    
+            syn_socket.close()   
+        #as slave 
         else:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            time.sleep(1+random.random())
-            s.connect(("127.0.0.1",setting.synport))
-            mt = s.recv(1024)
-            offset = time.time()-float(mt)
-        #time.sleep(3*random.random())
+            time.sleep(1+random.random())#wait for time master to start listening
+            s.connect(("127.0.0.1",setting.synport))#connect to master
+            mt = s.recv(1024)#get master's time
+            offset = time.time()-float(mt)#calculate offset
+            #send offset
             s.send(str(offset))
+            #get average offset
             moffset = s.recv(1024)
-        #print "User ",mt,offset,moffset
+            #set its own offset
             self._timeoffset = float(moffset) - offset
             s.close()
         
@@ -100,26 +104,19 @@ class UserProcess(object):
     
     #rpc call for register
     def register(self):
-        self.c = xmlrpclib.ServerProxy("http://"+setting.serveradd[0]+":"+str(setting.serveradd[1]),verbose=0)
+        self.c = xmlrpclib.ServerProxy("http://"+setting.serveradd[0]+":"+str(setting.serveradd[1]))
         self._gid = self.c.register("user","user",self._localadd)
-    	#c = zerorpc.Client()
-        #c.connect(setting.serveradd)
-    	#self._gid = c.register("user","user",self._localadd)
-    	#c.close()
         return 1
+
     #rpc interface for text message
     def text_message(self,msg):
         self.log.write(msg+'\n')
         return 1
+
     #rpc call for change mode 
     def change_mode(self,mode):
         self.c.change_mode(mode)
         self._mode = self.c.change_mode(mode)
-     	#c = zerorpc.Client()
-        #c.connect(setting.serveradd)
-    	#c.change_mode(mode)
-        #self._mode = mode
-        #c.close()
         return 1
 
     def update_vector_clock(self,vector):

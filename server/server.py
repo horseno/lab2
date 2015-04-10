@@ -190,7 +190,6 @@ class Gateway(object):
             return -1
         #get timestamp
         timestmp = round(time.time()+self._timeoffset-setting.start_time,2)
-        #print timestmp,id
         self.writedb(id,state,timestmp,self.vector)
         #log
         self.log.write(str(round(time.time()-setting.start_time,2))+','+self._idlist[id][1]+','+state+'\n')
@@ -198,20 +197,20 @@ class Gateway(object):
     	#event ordering
         if self._idlist[id][1] == "motion" or self._idlist[id][1] == "door":
             #compare the order of motion and door event
-            #print "###",id,self._idlist[id][1]
             if self._idlist[id][1] == "motion":
                 ds = self.readdb(self._idx["door"],timestmp)
                 bs = self.readdb(self._idx["beacon"],timestmp)
-                if ds == 1 and bs == 1:
+                if ds == 1 and bs == 1 and self._mode == "AWAY":
                     self._mode = "HOME"
             else:
                 ms = self.readdb(self._idx["motion"],timestmp)
                 bs = self.readdb(self._idx["beacon"],timestmp)
-                if ms == 1 and bs == 1:
+                if ms == 1 and bs == 1 and self._mode == "HOME":
                     self._mode = "AWAY"     
-            print server._mode
+            print "Server mode:",server._mode
             
         if self._idlist[id][1] == "motion":
+            #home mode 
             if server._mode == "HOME":
                 if "bulb" not in server._idx:
                     print "No bulb"
@@ -222,7 +221,7 @@ class Gateway(object):
                 else:
                     if self.lasttime != -1 and time.time()-self.lasttime> 5:
                         self.change_state(self._idx["bulb"],'0')
-            #away mode set message if there is motion
+            #away mode send message if there is motion
             else:
                 if state == '1':
                     print "Server: Someone in your room!"
@@ -237,13 +236,11 @@ class Gateway(object):
             return -1
         #set up connection
         c = xmlrpclib.ServerProxy(self._idlist[id][2])
-    
         flag = 0
         #update vector clock
         self.vector[self.cid] = self.vector[self.cid]+1
         #multicast vector
         multicast.multicast(self.serveradd, self.vector)
-        
         #rpc call
         if c.change_state(state):
             flag = 1
