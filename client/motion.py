@@ -56,7 +56,6 @@ def main():
         '''sync time of different process before running'''
         current_time = int(time.time())
         waitT = setting.start_time - current_time
-        print "motion wait time ",setting.start_time,current_time,waitT
         time.sleep(waitT)
 
     temp = sensor.Sensor("motion",serveradd,localadd,devNum)

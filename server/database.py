@@ -1,12 +1,10 @@
-#import zerorpc
 import xmlrpclib 
 import SimpleXMLRPCServer
 import time
 import csv
 import sys
 sys.path.append("./")
-sys.path.append("../")
-
+#sys.path.append("../")
 import setting
 
 def compare_float(f1, f2):
@@ -18,7 +16,10 @@ class Database:
         #store current state and history state in separate files
         self.fname = "dbfile.csv"
         
-        self.s = SimpleXMLRPCServer.SimpleXMLRPCServer(Dbadd,logRequests=False)#zerorpc.Server(self)
+        self._isLeader = 0 #whether it is leader
+        self._electID = 0 #id for election
+        
+        self.s = SimpleXMLRPCServer.SimpleXMLRPCServer(Dbadd,logRequests=False)#rpc server
         self.s.register_instance(self)
         self.s.serve_forever()
     
@@ -29,24 +30,78 @@ class Database:
         return string 
 
     def write(self, cid, state, timestamp,vector):
-        #print "#$^$#"
         with open(self.fname, 'ab') as f:
             curWriter = csv.writer(f)
             curWriter.writerow([cid,state,timestamp,vector])
         return 1
-        
+    
+    def leader_elect(self):
+        time.sleep(1+random.random())#wait for server setting up
+        address = ('<broadcast>', setting.eleport) 
+        clt_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        clt_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        clt_socket.sendto(self.name, address)#broadcast its address to register for election
+        #receive next node's address in the ring
+        nextadd, addr = clt_socket.recvfrom(2048)
+        tmp = nextadd[1:-1].split(",")
+        nextadd = (tmp[0][1:-1],int(tmp[1]))
+        #receive election message
+        recv_data, preaddr = clt_socket.recvfrom(2048)
+        #add its election id
+        recv_data = recv_data+"#"+str(self._electID)
+        clt_socket.sendto(recv_data, nextadd)
+        #receive election result
+        id_data, addr = clt_socket.recvfrom(2048)
+        if id_data == "1":
+           self._isLeader = 1
+        return 1 
+      
     def time_syn(self):
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        time.sleep(1+random.random())
-        s.connect(("127.0.0.1",setting.synport))
-        mt = s.recv(1024)
-        offset = time.time()-10.0-float(mt)
-        #time.sleep(3*random.random())
-        s.send(str(offset))
-        moffset = s.recv(1024)
-        print "sensor ",self.name,mt,offset,moffset
-        self._timeoffset = float(moffset) - offset
-        s.close()
+        #as master
+        if self._isLeader == 1:
+    	    connect_list = []
+            syn_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            syn_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            syn_socket.bind(("127.0.0.1", setting.synport))#port for listening slaves' connection
+            syn_socket.listen(8)
+            #getting slaves' address
+            while len(connect_list) < setting.devNum-1:
+                sockfd, addr = syn_socket.accept()
+                connect_list.append(sockfd)
+            #send master's current time
+            for sk in connect_list:
+                sk.send(str(time.time()))
+            offsets = []
+            ready = []
+            #get offsets   
+            while len(offsets)< setting.devNum-1:
+                read_sockets,write_sockets,error_sockets = select.select(connect_list,[],[])#select a ready socket
+                for sk in read_sockets:
+                    if sk not in ready:
+                        of = sk.recv(1024)
+                        offsets.append(float(of))
+                        ready.append(sk)   
+            #average offsets
+            moffset = sum(offsets)/(len(offsets)+1.0)
+            #send average offset
+            for sk in connect_list:
+                sk.send(str(moffset))
+            self._timeoffset = moffset
+            syn_socket.close()    
+        #as slave
+        else: 
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            time.sleep(1+random.random())#wait for time master to start listening
+            s.connect(("127.0.0.1",setting.synport))#connect to master
+            mt = s.recv(1024)#get master's time
+            offset = time.time()-float(mt)#calculate offset
+            #send offset
+            s.send(str(offset))
+            #get average offset
+            moffset = s.recv(1024)
+            #set its own offset
+            self._timeoffset = float(moffset) - offset
+            s.close()
 
     def read(self, cid, timestamp):
         '''read the file to get current state/ all the states/ state at a particular time of a device
@@ -75,10 +130,9 @@ class Database:
                         curState = state
                         maxtime = time 
             if compare_float(timestamp,0) and curState != '-1':
-                state_l.append((curState, maxtime,vector))
-
-                        
+                state_l.append((curState, maxtime,vector))   
         return state_l
+        
     def read_offset(self, cid, timestamp, offset):
         li=[]
         with open(self.fname, 'rb') as f:
@@ -92,27 +146,15 @@ class Database:
                         li.append(1)
                     else:
                         li.append(0)
-        print li
+        #print li
         if sum(li) > 0:
             return 1
         else:
             return 0
  
 
-
 def main():
-
     DB = Database(setting.Dbadd)
-    #a = [1,2,3,4,5,6]
-    #DB.write(1,1,1234,a)
-    #DB.write(2,1,1235,a)
-    #DB.write(2,0,1254,a)
-    #DB.write(1,0,1256,a)
-    #DB.write(2,1,1259,a)
-    
-    #print DB.read (2,-1)
-    #print DB.read_offset(1,1259, 10)
-    #time.sleep(30)
 
 if __name__ == "__main__":
     main()

@@ -1,4 +1,3 @@
-#import zerorpc
 import time
 import threading
 import csv
@@ -16,102 +15,112 @@ import socket
 class Gateway(object):
 	#initial class
     def __init__(self,sadd,devNum):
-        #connect to db
-        self._isLeader = 0
-        self._electID = random.random()
-        self._timeoffset = 0
+        self._isLeader = 0 #whether it is leader
+        self._electID = random.random() #id for election
+        self._timeoffset = 0 #synchronized time offset
         self._n = 1 #number of registered devices
         self._idlist = [["gateway","gateway",sadd,0]]#list for registered devices
         self._mode = "HOME"
         self.serveradd = sadd #server address
-        self._idx = {} #index for global id
+        self._idx = {"gatewat":0} #index for global id
         self.lasttime = -1 #last time the motion sensor was on
-        self.log = open("server_log.txt",'w+') #server log file
-        self.cid = 0
-        self.vector = [0] * devNum 
-
+        self.log = open("results/server_log.txt",'w+') #server log file
+        self.cid = 0 #id for vector clock
+        self.vector = [0] * devNum #current vector clock
+    
+    #leader election
     def leader_elect(self):
-        elect_list = ["server"]
-        elect_dict = {"server":('', setting.eleport)}
+        elect_list = ["server"] #candidate list for election
+        elect_dict = {"server":('', setting.eleport)} #address for candidate
         elt_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         elt_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
-        elt_socket.bind(('', setting.eleport))
+        elt_socket.bind(('', setting.eleport)) #broadcast port for registering election
         n = 1
+        print "Server waiting for registration"
         while n<setting.devNum:
-            print "Listening"
-            recv_data, addr = elt_socket.recvfrom(2048)
-            print recv_data,addr
+            #Listening for register
+            recv_data, addr = elt_socket.recvfrom(2048) #get candidate address
+            print recv_data,addr,"registered"
             if recv_data not in elect_list:
                 elect_list.append(recv_data)
                 elect_dict[recv_data] = addr
                 n = n+1
+        #building ring topology by telling each candidate it successor
         for k in range(1,n):
             elt_socket.sendto(str(elect_dict[elect_list[(k+1)%n]]),elect_dict[elect_list[k]])
-        #elt.socket.sendto(
+        
+        #election message token
         msg = "ele#"+str(self._electID)
         elt_socket.sendto(msg,elect_dict[elect_list[1]])
+        #waiting for the election token coming back
         recv_data, addr = elt_socket.recvfrom(2048)
         ld = -1
-        print recv_data,addr
         eidlist = recv_data.split("#")
         if eidlist[0] == "ele":
             eidlist = eidlist[1:]
             maxid = -1
+            #find the candidate with the maximum election id
             for i in range(n):
                if float(eidlist[i])>maxid:
                    maxid = float(eidlist[i])
-                   ld = i
+                   ld = i #election result
         if ld == 0:
             self._isLeader = 1
-        for i in range(1,n):
+        # tell each candidate the election result
+        for i in range(1,n): 
             if ld == i:
                 elt_socket.sendto("1",elect_dict[elect_list[i]])
             else:
                 elt_socket.sendto("0",elect_dict[elect_list[i]])
         print "server ",self._electID,self._isLeader 
+        elt_socket.close()
         return 1
             
+    #time synchronization
     def time_syn(self):
+        #as master
         if self._isLeader == 1:
     	    connect_list = []
             syn_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             syn_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            syn_socket.bind(("127.0.0.1", setting.synport))
+            syn_socket.bind(("127.0.0.1", setting.synport))#port for listening slaves' connection
             syn_socket.listen(8)
-        #print "server listen"
+            #getting slaves' address
             while len(connect_list) < setting.devNum-1:
                 sockfd, addr = syn_socket.accept()
-                print addr
                 connect_list.append(sockfd)
-            #print "server send"
+            #send master's current time
             for sk in connect_list:
                 sk.send(str(time.time()))
             offsets = []
             ready = []
-        #print "server receive"
-            while len(offsets)< setting.devNum-1:#setting.devNum-1
-                read_sockets,write_sockets,error_sockets = select.select(connect_list,[],[])
+            #get offsets   
+            while len(offsets)< setting.devNum-1:
+                read_sockets,write_sockets,error_sockets = select.select(connect_list,[],[])#select a ready socket
                 for sk in read_sockets:
                     if sk not in ready:
                         of = sk.recv(1024)
                         offsets.append(float(of))
                         ready.append(sk)   
+            #average offsets
             moffset = sum(offsets)/(len(offsets)+1.0)
+            #send average offset
             for sk in connect_list:
                 sk.send(str(moffset))
             self._timeoffset = moffset
             syn_socket.close()    
-        #print "server ",moffset
+        #as slave
         else: 
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            time.sleep(1+random.random())
-            s.connect(("127.0.0.1",setting.synport))
-            mt = s.recv(1024)
-            offset = time.time()+3.0-float(mt)
-        #time.sleep(3*random.random())
+            time.sleep(1+random.random())#wait for time master to start listening
+            s.connect(("127.0.0.1",setting.synport))#connect to master
+            mt = s.recv(1024)#get master's time
+            offset = time.time()-float(mt)#calculate offset
+            #send offset
             s.send(str(offset))
+            #get average offset
             moffset = s.recv(1024)
-        #print "User ",mt,offset,moffset
+            #set its own offset
             self._timeoffset = float(moffset) - offset
             s.close()
         
@@ -128,62 +137,91 @@ class Gateway(object):
             print "Wrong Id"
             return -1
         #set up connection
-        c = xmlrpclib.ServerProxy(self._idlist[id][2],verbose=0) #zerorpc.Client()
-        #c.connect(self._idlist[id][2])
-        #rpc call
+        c = xmlrpclib.ServerProxy(self._idlist[id][2])
+        #update vector clock
+        self.vector[self.cid] = self.vector[self.cid]+1
+        #multicast update
         multicast.multicast(self.serveradd, self.vector)
+        #rpc call
         state = c.query_state()
-        #c.close()
+        #get timestamp
         timestmp = round(time.time()+self._timeoffset-setting.start_time,2)
+        
         self.writedb(id,state,timestmp,self.vector)
-        self._idlist[id][3] = state
         #log
-        self.log.write(str(round(time.time()-setting.start_time,2))+','+self._idlist[id][1]+','+state+'\n')
-        print str(round(time.time()-setting.start_time,2))+','+self._idlist[id][1]+','+state+'\n'
+        self.log.write(str(round(time.time()+self._timeoffset-setting.start_time,2))+','+self._idlist[id][1]+','+state+'\n')
+        print str(round(time.time()+self._timeoffset-setting.start_time,2))+','+self._idlist[id][1]+','+state+'\n'
         #record the last time motion sensor was on 
-        if self._idlist[id][1] == "motion" and state == '1':
-            self.lasttime = time.time()
+        if self._idlist[id][1] == "motion":
+            if server._mode == "HOME":
+                if "bulb" not in server._idx:
+                    print "No bulb"
+                    return state
+                if state == '1':
+                    self.lasttime = time.time()+self._timeoffset
+                    self.change_state(self._idx["bulb"],'1')
+                else:
+                    if self.lasttime != -1 and time.time()+self._timeoffset-self.lasttime > 4:
+                        self.change_state(self._idx["bulb"],'0')
+            #away mode set message if there is motion
+            else:
+                if state == '1':
+                    print "Server: Someone in your room!"
+                    self.text_message("Someone in your room!")
         return state
-        
+    
+    #write to db
     def writedb(self,id,state,timestmp,vector):
-        c = xmlrpclib.ServerProxy("http://"+setting.Dbadd[0]+":"+str(setting.Dbadd[1]),verbose=0)
-        #print "#$#$#$#"
+        c = xmlrpclib.ServerProxy("http://"+setting.Dbadd[0]+":"+str(setting.Dbadd[1]))
         c.write(id,state,timestmp,vector)
-        #print "####"
         return 1
-        
+    
+    #read from db    
     def readdb(self,id,timestmp):
-        c = xmlrpclib.ServerProxy("http://"+setting.Dbadd[0]+":"+str(setting.Dbadd[1]),verbose=0)
-        c.read(id,timestmp)
-        return 1
+        c = xmlrpclib.ServerProxy("http://"+setting.Dbadd[0]+":"+str(setting.Dbadd[1]))
+        state = c.read_offset(id,timestmp,1)
+        return state
         
     #rpc interface for report state
     def report_state(self, id, state):
     	#checking invalidate id
-    	print "Server ",id,state
         if id >= self._n:
             print "Wrong Id"
             return -1
+        #get timestamp
         timestmp = round(time.time()+self._timeoffset-setting.start_time,2)
+        #print timestmp,id
         self.writedb(id,state,timestmp,self.vector)
-        self._idlist[id][3] = state
         #log
         self.log.write(str(round(time.time()-setting.start_time,2))+','+self._idlist[id][1]+','+state+'\n')
-        print str(round(time.time()-setting.start_time,2))+','+self._idlist[id][1]+','+state+'\n'
-    	#task 2
-        if self._idlist[id][1] == "motion":
-        	#home mode turn on bulb if there is motion
+        print str(round(time.time()+self._timeoffset-setting.start_time,2))+','+self._idlist[id][1]+','+state+'\n'
+    	#event ordering
+        if self._idlist[id][1] == "motion" or self._idlist[id][1] == "door":
+            #compare the order of motion and door event
+            #print "###",id,self._idlist[id][1]
+            if self._idlist[id][1] == "motion":
+                ds = self.readdb(self._idx["door"],timestmp)
+                bs = self.readdb(self._idx["beacon"],timestmp)
+                if ds == 1 and bs == 1:
+                    self._mode = "HOME"
+            else:
+                ms = self.readdb(self._idx["motion"],timestmp)
+                bs = self.readdb(self._idx["beacon"],timestmp)
+                if ms == 1 and bs == 1:
+                    self._mode = "AWAY"     
             print server._mode
+            
+        if self._idlist[id][1] == "motion":
             if server._mode == "HOME":
                 if "bulb" not in server._idx:
                     print "No bulb"
                     return 1
                 if state == '1':
                     self.lasttime = time.time()
-                    self.change_state(self._idx["bulb"],1)
+                    self.change_state(self._idx["bulb"],'1')
                 else:
                     if self.lasttime != -1 and time.time()-self.lasttime> 5:
-                        self.change_state(self._idx["bulb"],0)
+                        self.change_state(self._idx["bulb"],'0')
             #away mode set message if there is motion
             else:
                 if state == '1':
@@ -198,29 +236,30 @@ class Gateway(object):
             print "Wrong Id"
             return -1
         #set up connection
-        #c = zerorpc.Client()
-        #rpc call
-        c = xmlrpclib.ServerProxy(self._idlist[id][2],verbose=0)
-        #c.connect(self._idlist[id][2])
+        c = xmlrpclib.ServerProxy(self._idlist[id][2])
+    
         flag = 0
-
+        #update vector clock
+        self.vector[self.cid] = self.vector[self.cid]+1
+        #multicast vector
         multicast.multicast(self.serveradd, self.vector)
+        
+        #rpc call
         if c.change_state(state):
             flag = 1
-        #c.close()
         return flag
     
     #rpc interface for register
     def register(self,type,name,address):
     	#register device
-        self._idlist.append([type,name,"http://"+address[0]+":"+str(address[1]),0])
+        self._idlist.append([type,name,"http://"+address[0]+":"+str(address[1])])
         #assign global id
         self._idx[name] = self._n
         #increase number of registed device
         self._n =self._n + 1
         #log
-        self.log.write(str(round(time.time()-setting.start_time,2))+','+name+','+str(self._n - 1)+'\n')
-        print str(round(time.time()-setting.start_time,2))+','+name+','+str(self._n - 1)+'\n'
+        self.log.write(str(round(time.time()+self._timeoffset-setting.start_time,2))+','+name+','+str(self._n - 1)+'\n')
+        print str(round(time.time()+self._timeoffset-setting.start_time,2))+','+name+','+str(self._n - 1)+'\n'
         #return global id
         return self._n - 1
     
@@ -231,18 +270,16 @@ class Gateway(object):
             print "No user process"
             return
         #set up connection
-        c = xmlrpclib.ServerProxy(self._idlist[self._idx["user"]][2],verbose=0)#zerorpc.Client()
+        c = xmlrpclib.ServerProxy(self._idlist[self._idx["user"]][2])
         #rpc call
-        #c.connect(self._idlist[self._idx["user"]][2])
-        c.text_message(str(round(time.time()-setting.start_time,2))+","+msg)
-        #c.close()
+        c.text_message(str(round(time.time()+self._timeoffset-setting.start_time,2))+","+msg)
         
     #rpc interface for change mode
     def change_mode(self,mode):
-    	#print mode
         self._mode = mode
         return self._mode
-
+    
+    #update vector clock
     def  update_vector_clock(self,vector):
         for i in range(len(vector)):
             if vector[i] > self.vector[i]:
@@ -287,8 +324,6 @@ listen_thread.start()
 current_time = int(time.time())
 waitT = setting.start_time - current_time
 time.sleep(waitT)
-time.sleep(3)
-#server.text_msg("Someone in your room!")
 
 for index in range(len(timel)):
     at = action[index].split(';')
@@ -313,18 +348,7 @@ for index in range(len(timel)):
             print "No montion sensor"
             continue
         mo = server.query_state(server._idx["motion"])
-        if server._mode == "HOME":
-            if "bulb" not in server._idx:
-                print "No bulb"
-                continue
-            if server._idlist[server._idx["motion"]][3] == '1':
-                server.change_state(server._idx["bulb"],1)
-            else:
-                if time.time()-server.lasttime> 5:
-                    server.change_state(server._idx["bulb"],0)
-        else:
-            if server._idlist[server._idx["motion"]][3] == '1':
-                server.text_message("Someone in your room!")
+        
     
     if index+1<len(timel):
         waitTime = float(timel[index+1])+float(setting.start_time) - time.time()+random.random()/50.0

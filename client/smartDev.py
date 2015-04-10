@@ -84,7 +84,7 @@ class SmartDev:
             s.connect(("127.0.0.1",setting.synport))
         #print "smartDev connected\n"       
             mt = s.recv(1024)
-            offset = time.time()+5.0-float(mt)
+            offset = time.time()-float(mt)
         #time.sleep(3*random.random())
             s.send(str(offset))
             moffset = s.recv(1024)

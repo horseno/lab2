@@ -81,7 +81,7 @@ class UserProcess(object):
             time.sleep(1+random.random())
             s.connect(("127.0.0.1",setting.synport))
             mt = s.recv(1024)
-            offset = time.time()+3.0-float(mt)
+            offset = time.time()-float(mt)
         #time.sleep(3*random.random())
             s.send(str(offset))
             moffset = s.recv(1024)

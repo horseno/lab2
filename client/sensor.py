@@ -55,17 +55,17 @@ class Sensor:
             syn_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             syn_socket.bind(("127.0.0.1", setting.synport))
             syn_socket.listen(8)
-        #print "server listen"
+       
             while len(connect_list) < setting.devNum-1:
                 sockfd, addr = syn_socket.accept()
                 print addr
                 connect_list.append(sockfd)
-            #print "server send"
+            
             for sk in connect_list:
                 sk.send(str(time.time()))
             offsets = []
             ready = []
-        #print "server receive"
+       
             while len(offsets)< setting.devNum-1:#setting.devNum-1
                 read_sockets,write_sockets,error_sockets = select.select(connect_list,[],[])
                 for sk in read_sockets:
@@ -83,11 +83,11 @@ class Sensor:
             time.sleep(1+random.random())
             s.connect(("127.0.0.1",setting.synport))
             mt = s.recv(1024)
-            offset = time.time()-10.0-float(mt)
-        #time.sleep(3*random.random())
+            offset = time.time()-float(mt)
+       
             s.send(str(offset))
             moffset = s.recv(1024)
-        #print "sensor ",self.name,mt,offset,moffset
+        
             self._timeoffset = float(moffset) - offset
             s.close()
     def register_to_server(self):
